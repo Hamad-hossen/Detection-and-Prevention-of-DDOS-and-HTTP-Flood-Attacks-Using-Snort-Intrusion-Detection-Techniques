@@ -1,0 +1,13 @@
+[Unit]
+Description=Snort 3 Auto Block via iptables
+After=network.target
+
+[Service]
+ExecStart=/home/ubuntu/block_raw.sh
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

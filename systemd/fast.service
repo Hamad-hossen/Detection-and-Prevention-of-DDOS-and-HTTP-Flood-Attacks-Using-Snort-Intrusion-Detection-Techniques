@@ -1,0 +1,14 @@
+[Unit]
+Description=snort fast logs
+After=network.target
+
+[Service]
+ExecStart=/home/ubuntu/fast.sh
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
