@@ -7,8 +7,6 @@ Source code and configuration files used in the network protection system presen
 
 This repository contains the source code and configuration files used in the network protection system presented in the published research paper:
 
-**Detection and Prevention of DDOS and HTTP Flood Attacks Using Snort Intrusion Detection Techniques**
-
 The project presents a network protection system designed to detect and automatically respond to network attacks using Snort 3 and iptables. The system is implemented on Ubuntu Server and deployed transparently within the network using a Linux Layer 2 bridge.
 
 The main objective of the project is to combine intrusion detection with automated response, allowing detected malicious source IP addresses to be temporarily blocked without requiring continuous manual intervention.
@@ -164,3 +162,10 @@ iptables
       |
       v
 Temporary IP Blocking
+
+---
+
+Pleased to share our research paper on detecting and preventing DDoS and HTTP Flood attacks using Snort 3 and iptables for automated threat blocking at the Layer 2 Bridge level.
+
+🔗 Research Link (DOI):
+[https://doi.org/10.62341/istj-vol39-1-jr27]
