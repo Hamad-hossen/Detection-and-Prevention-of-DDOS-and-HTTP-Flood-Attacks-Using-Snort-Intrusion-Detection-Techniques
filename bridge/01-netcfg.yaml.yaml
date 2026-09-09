@@ -1,0 +1,17 @@
+network:
+  version: 2
+  renderer: NetworkManager
+  ethernets:
+    ens33: {}
+    ens38: {}
+  bridges:
+    br0:
+      interfaces: [ens33, ens38]
+      dhcp4: no
+      dhcp6: no
+      addresses: []
+      link-local: []
+      optional: true
+      parameters:
+        stp: false
+        forward-delay: 0
