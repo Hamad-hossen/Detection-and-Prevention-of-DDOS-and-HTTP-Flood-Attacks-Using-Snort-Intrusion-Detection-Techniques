@@ -1,0 +1,536 @@
+# $Id: local.rules,v 1.11 2004/07/23 20:15:44 bmc Exp $
+# ----------------
+# LOCAL RULES
+# ----------------
+# This file intentionally does not come with signatures.  Put your local
+# additions here.
+
+# alert tcp any any -> $HOME_NET 4444 (msg: "Connection to remote IP on port 4444"; sid:1000002; rev:1;)
+
+ alert icmp any any -> any any (msg:"ICMP Ping Flood Detected"; itype:8; detection_filter:track by_src, count 40, seconds 1; sid:4000010; rev:1;)
+
+alert http any any -> any any (
+    msg: "[DoS] HTTP Flood Attack Detected";
+    detection_filter: track by_src, count 100, seconds 1;
+    classtype: attempted-dos;
+    sid: 3000011;
+    rev: 1;
+)
+
+ alert http any any -> any any (
+    msg:"[ALERT] Phishing attempt - password field detected";
+    content:"password=";
+    http_client_body;
+    sid:1000100;
+    rev:1;
+ )
+
+  alert http any any -> any any (
+    msg:"Detected input field of type password";
+    content:"type=\"password\"";
+    sid:1000103;
+    metadata: service http;
+ )
+
+# ================================================================
+# Snort 3 Rules - Nmap Scan Detection Suite (Tested for Snort 3)
+# ================================================================
+
+# [1] كشف المسح الغاشم T5 - أكثر من 100 اتصال في 5 ثوانٍ
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-OS-Active-Scan - Full Aggressive Scan Detected (T5/p-/-A)";
+    flags: S;
+    flow: stateless;
+    detection_filter: track by_src, count 100, seconds 3;
+    reference: url, nmap.org/book/man-port-scanning-options.html;
+    classtype: attempted-recon;
+    sid: 1000001;
+    rev: 3;
+)
+
+# [2] كشف مسح جميع المنافذ (p-) - 50 منفذ في 3 ثوانٍ
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-OS-Full-Port-Scan - Port Range Sweep Detected";
+    flags: S;
+    flow: to_server;
+    detection_filter: track by_src, count 50, seconds 2;
+    classtype: attempted-recon;
+    sid: 1000002;
+    rev: 3;
+)
+
+# [3] كشف فحص نظام التشغيل (O) - خيارات نافذة TCP غير طبيعية
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-OS-Detection - OS Fingerprinting Probe Detected";
+    flags: S;
+    window: 1024;
+    flow: stateless;
+    reference: url, nmap.org/book/osdetect-methods.html;
+    classtype: attempted-recon;
+    sid: 1000003;
+    rev: 3;
+)
+
+# [4] كشف حزمة TCP ISN الخاصة بفحص نظام التشغيل
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-OS-Detection - TCP ISN Probe (nmap OS scan)";
+    flags: E;
+    flow: stateless;
+    dsize: 0;
+    reference: url, nmap.org/book/osdetect-methods.html;
+    classtype: attempted-recon;
+    sid: 1000004;
+    rev: 3;
+)
+
+# [5] كشف مسح إصدار الخدمات (sV) - اتصالات ACK متتالية
+alert tcp $EXTERNAL_NET any -> $HOME_NET [21,22,23,25,53,80,110,135,139,143,443,445,993,995,1433,1521,2049,3306,3389,5432,5900,8080,8443] (
+    msg: "NMAP-Version-Scan - Service Version Probe on Common Port";
+    flags: A;
+    flow: stateless;
+    detection_filter: track by_src, count 15, seconds 2;
+    reference: url, nmap.org/book/vscan.html;
+    classtype: attempted-recon;
+    sid: 1000005;
+    rev: 3;
+)
+
+# [6] كشف HTTP Version Probe في nmap-service-probes
+alert tcp $EXTERNAL_NET any -> $HOME_NET [80,443,8080,8443] (
+    msg: "NMAP-Version-Scan - HTTP Version Probe";
+    flow: to_server, established;
+    content: "GET / HTTP/1.0", depth 16;
+    content: "Host|3A|", offset 16, depth 8;
+    reference: url, nmap.org/book/vscan.html;
+    classtype: attempted-recon;
+    sid: 1000006;
+    rev: 3;
+)
+
+# [7] كشف SYN Stealth Scan (sS) - 40 حزمة SYN في 5 ثوانٍ
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-STEALTH-SYN - SYN Scan Detected (Half-Open Stealth)";
+    flags: S;
+    flow: stateless;
+    detection_filter: track by_src, count 40, seconds 2;
+    classtype: attempted-recon;
+    sid: 1000007;
+    rev: 3;
+)
+
+# [8] كشف FIN Stealth Scan (sF)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-STEALTH-FIN - FIN Stealth Scan Detected";
+    flags: F;
+    flow: stateless;
+    classtype: attempted-recon;
+    sid: 1000008;
+    rev: 3;
+)
+
+# [9] كشف NULL Stealth Scan (sN)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-STEALTH-NULL - NULL Scan Detected (Zero Flags TCP Packet)";
+    flags: 0;
+    flow: stateless;
+    classtype: attempted-recon;
+    sid: 1000009;
+    rev: 3;
+)
+
+# [10] كشف Xmas Tree Stealth Scan (sX) - FIN+PSH+URG
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-STEALTH-XMAS - Xmas Tree Scan Detected (FIN+PSH+URG)";
+    flags: FPU;
+    flow: stateless;
+    classtype: attempted-recon;
+    sid: 1000010;
+    rev: 3;
+)
+
+# [11] كشف مسح متعدد الأعلام (Aggressive / Hybrid Stealth)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-COMPREHENSIVE - Nmap Scan Activity Detected (General)";
+    flags: S;
+    flow: stateless;
+    detection_filter: track by_src, count 30, seconds 3;
+    reference: url, nmap.org;
+    classtype: attempted-recon;
+    sid: 1000011;
+    rev: 3;
+)
+# [12] كشف Traceroute - حزم TTL منخفضة
+alert ip $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-TRACEROUTE - Traceroute Detection (Low TTL values)";
+    ttl: < 10;
+    detection_filter: track by_src, count 20, seconds 5;
+    classtype: attempted-recon;
+    sid: 1000012;
+    rev: 3;
+)
+
+# [13] كشف مسح UDP واسع (sU)
+alert udp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-UDP-SCAN - Wide UDP Port Scan Detected";
+    detection_filter: track by_src, count 30, seconds 5;
+    classtype: attempted-recon;
+    sid: 1000013;
+    rev: 3;
+)
+
+# [14] كشف المسح البطيء T0/T1 (20 منفذ في 120 ثانية)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-SLOW-SCAN - Slow/T0 Scan Detected (Stealth Timing)";
+    flags: S;
+    flow: to_server;
+    detection_filter: track by_src, count 20, seconds 120;
+    classtype: attempted-recon;
+    sid: 1000014;
+    rev: 3;
+)
+
+
+# ==============================================================================
+# SECTION 1: FAST SYN & PORT SWEEPS (تنبيهات فورية للمسح السريع)
+# ==============================================================================
+
+# [1] Rapid SYN Scan - تنبيه سريع خلال ثانيتين (20 حزمة)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-FAST - Aggressive SYN Burst Detected";
+    flags: S;
+    flow: stateless;
+    detection_filter: track by_src, count 20, seconds 2;
+    classtype: attempted-recon;
+    sid: 1000015;
+    rev: 1;
+)
+
+# [2] Rapid Port Sweep - كشف مسح المنافذ السريع (15 منفذ في ثانيتين)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-FAST - Rapid Multi-Port Sweep";
+    flags: S;
+    flow: to_server;
+    detection_filter: track by_src, count 15, seconds 2;
+    classtype: attempted-recon;
+    sid: 1000016;
+    rev: 1;
+)
+
+# [3] High-Rate Connection Probes - تنبيه عند الفحص الكثيف
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-FAST - High Rate Connection Probes";
+    flags: S;
+    flow: stateless;
+    detection_filter: track by_src, count 25, seconds 2;
+    classtype: attempted-recon;
+    sid: 1000017;
+    rev: 1;
+)
+
+# [4] Fast UDP Sweep - تنبيه فحص UDP في 3 ثوانٍ
+alert udp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-FAST - UDP Sweep Burst";
+    detection_filter: track by_src, count 15, seconds 3;
+    classtype: attempted-recon;
+    sid: 1000018;
+    rev: 1;
+)
+
+# [5] UDP Zero Length Probe - تنبيه فحص UDP بدون حمولة
+alert udp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-FAST - Empty UDP Probe Scan";
+    dsize: 0;
+    detection_filter: track by_src, count 5, seconds 2;
+    classtype: attempted-recon;
+    sid: 1000019;
+    rev: 1;
+)
+
+# ==============================================================================
+# SECTION 2: SINGLE-PACKET OS FINGERPRINTING PROBES (تنبيه فوري من حزمة واحدة)
+# ==============================================================================
+
+# [6] OS Probe 1 - Nmap OS Scan Window Size 1024
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-OS - Probe Window 1024 Match";
+    flags: S;
+    window: 1024;
+    flow: stateless;
+    reference: url, nmap.org/book/osdetect-methods.html;
+    classtype: attempted-recon;
+    sid: 1000020;
+    rev: 1;
+)
+
+# [7] OS Probe 2 - Nmap OS Scan Window Size 2048
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-OS - Probe Window 2048 Match";
+    flags: S;
+    window: 2048;
+    flow: stateless;
+    reference: url, nmap.org/book/osdetect-methods.html;
+    classtype: attempted-recon;
+    sid: 1000021;
+    rev: 1;
+)
+
+# [8] OS Probe 3 - Nmap OS Scan Window Size 3072
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-OS - Probe Window 3072 Match";
+    flags: S;
+    window: 3072;
+    flow: stateless;
+    reference: url, nmap.org/book/osdetect-methods.html;
+    classtype: attempted-recon;
+    sid: 1000022;
+    rev: 1;
+)
+
+# [9] OS Probe 4 - Nmap OS Scan Window Size 4096
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-OS - Probe Window 4096 Match";
+    flags: S;
+    window: 4096;
+    flow: stateless;
+    reference: url, nmap.org/book/osdetect-methods.html;
+    classtype: attempted-recon;
+    sid: 1000023;
+    rev: 1;
+)
+
+# [10] OS Probe - ECN / ECE Flag Probe
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-OS - ECN Explicit Congestion Notification Probe";
+    flags: E;
+    flow: stateless;
+    dsize: 0;
+    reference: url, nmap.org/book/osdetect-methods.html;
+    classtype: attempted-recon;
+    sid: 1000024;
+    rev: 1;
+)
+
+# ==============================================================================
+# SECTION 3: ADVANCED TCP ANOMALIES & STEALTH SCANS (تنبيهات فحص التخفي)
+# ==============================================================================
+
+# [11] NULL Scan - حزم بدلاء صفرية (تنبيه فوري)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-STEALTH - Immediate NULL Scan Alert";
+    flags: 0;
+    flow: stateless;
+    classtype: attempted-recon;
+    sid: 1000025;
+    rev: 1;
+)
+
+# [12] FIN Scan - حزمة FIN بدون handshake (تنبيه فوري)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-STEALTH - Immediate FIN Scan Alert";
+    flags: F;
+    flow: stateless;
+    classtype: attempted-recon;
+    sid: 1000026;
+    rev: 1;
+)
+
+# [13] Xmas Scan - أعلام FIN+PSH+URG (تنبيه فوري)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-STEALTH - Immediate Xmas Scan Alert";
+    flags: FPU;
+    flow: stateless;
+    classtype: attempted-recon;
+    sid: 1000027;
+    rev: 1;
+)
+
+# [14] SYN-FIN Scan - تجميع غير قانوني للأعلام (تنبيه فوري)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-STEALTH - Illegal SYN-FIN Flag Combination";
+    flags: SF;
+    flow: stateless;
+    classtype: attempted-recon;
+    sid: 1000028;
+    rev: 1;
+)
+
+# [15] SYN-RST Scan - تجميع غير قانوني للأعلام (تنبيه فوري)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-STEALTH - Illegal SYN-RST Flag Combination";
+    flags: SR;
+    flow: stateless;
+    classtype: attempted-recon;
+    sid: 1000029;
+    rev: 1;
+)
+
+# [16] PSH Scan بدون بيانات (تنبيه فوري)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-STEALTH - PSH Flag Probe without Payload";
+    flags: P;
+    dsize: 0;
+    flow: stateless;
+    classtype: attempted-recon;
+    sid: 1000030;
+    rev: 1;
+)
+
+# [17] ACK Scan Probe - كشف فحص جدران الحماية (-sA)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-STEALTH - ACK Window/Firewall Probe";
+    flags: A;
+    flow: stateless;
+    detection_filter: track by_src, count 10, seconds 2;
+    classtype: attempted-recon;
+    sid: 1000031;
+    rev: 1;
+)
+
+# [18] Window Scan Probe - فحص باستخدام ACK و Window Size صفر
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-STEALTH - Window Scan Probe Detected";
+    flags: A;
+    window: 0;
+    flow: stateless;
+    classtype: attempted-recon;
+    sid: 1000032;
+    rev: 1;
+)
+
+# ==============================================================================
+# SECTION 4: SERVICE VERSION & NSE SCRIPT DETECTION (فحص الخدمات)
+# ==============================================================================
+
+# [19] Fast Version Probe on Common Ports (10 حزم في ثانيتين)
+alert tcp $EXTERNAL_NET any -> $HOME_NET [21,22,23,25,53,80,110,135,139,143,443,445,3306,3389,8080] (
+    msg: "NMAP-VSCAN - Rapid Service Version Probe";
+    flags: A;
+    flow: stateless;
+    detection_filter: track by_src, count 10, seconds 2;
+    reference: url, nmap.org/book/vscan.html;
+    classtype: attempted-recon;
+    sid: 1000033;
+    rev: 1;
+)
+
+# [20] Nmap Scripting Engine (NSE) - User-Agent Default Match
+alert tcp $EXTERNAL_NET any -> $HOME_NET [80,443,8080,8443] (
+    msg: "NMAP-NSE - Nmap Scripting Engine User-Agent";
+    flow: to_server, established;
+    content: "Nmap Scripting Engine", fast_pattern;
+    classtype: attempted-recon;
+    sid: 1000034;
+    rev: 1;
+)
+
+# [21] Nmap Generic HTTP Probe
+alert tcp $EXTERNAL_NET any -> $HOME_NET [80,443,8080,8443] (
+    msg: "NMAP-VSCAN - Generic HTTP Service Probe";
+    flow: to_server, established;
+    content: "GET / HTTP/1.0|0D 0A 0D 0A|", depth 20;
+    classtype: attempted-recon;
+    sid: 1000035;
+    rev: 1;
+)
+
+# [22] Nmap SSL/TLS Probe - فحص بروتوكول التشفير
+alert tcp $EXTERNAL_NET any -> $HOME_NET [443,8443,993,995,465] (
+    msg: "NMAP-VSCAN - SSL Probe Detection";
+    flow: to_server;
+    content: "|16 03 01 00|", depth 4;
+    detection_filter: track by_src, count 5, seconds 2;
+    classtype: attempted-recon;
+    sid: 1000036;
+    rev: 1;
+)
+
+# [23] Nmap SIP Service Probe - فحص VoIP
+alert udp $EXTERNAL_NET any -> $HOME_NET [5060,5061] (
+    msg: "NMAP-VSCAN - SIP Service Probe Detected";
+    content: "OPTIONS sip:nm SIP/2.0", depth 25;
+    classtype: attempted-recon;
+    sid: 1000037;
+    rev: 1;
+)
+
+# ==============================================================================
+# SECTION 5: NETWORK INFRASTRUCTURE PROBES (فحص الشبكة وتتبع المسار)
+# ==============================================================================
+
+# [24] Rapid Low-TTL Traceroute Probe (10 حزم في ثانيتين)
+alert ip $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-TRACE - Fast Low TTL Traceroute Probe";
+    ttl: < 10;
+    detection_filter: track by_src, count 10, seconds 2;
+    classtype: attempted-recon;
+    sid: 1000038;
+    rev: 1;
+)
+
+# [25] ICMP Ping Sweep - فحص ICMP التلقائي لـ Nmap (-sn)
+alert icmp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-PING - ICMP Echo Sweep Burst";
+    itype: 8;
+    detection_filter: track by_src, count 10, seconds 2;
+    classtype: attempted-recon;
+    sid: 1000039;
+    rev: 1;
+)
+
+# [26] ICMP Timestamp Request Probe (-PP)
+alert icmp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-PING - ICMP Timestamp Request Sweep";
+    itype: 13;
+    classtype: attempted-recon;
+    sid: 1000040;
+    rev: 1;
+)
+
+# [27] ICMP Address Mask Request Probe (-PM)
+alert icmp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-PING - ICMP Address Mask Request Sweep";
+    itype: 17;
+    classtype: attempted-recon;
+    sid: 1000041;
+    rev: 1;
+)
+
+# [28] SCTP INIT Scan (-sZ)
+alert sctp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-SCTP - SCTP INIT Chunk Probe";
+    detection_filter: track by_src, count 10, seconds 2;
+    classtype: attempted-recon;
+    sid: 1000042;
+    rev: 1;
+)
+
+# [29] Medium-Paced Scan Interceptor (نافذة 3 ثوانٍ)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-TIMING - Medium-Paced Scan Detection";
+    flags: S;
+    flow: to_server;
+    detection_filter: track by_src, count 10, seconds 3;
+    classtype: attempted-recon;
+    sid: 1000043;
+    rev: 1;
+)
+
+# [30] Comprehensive Nmap Catch-All (تنبيه شامل سريع)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg: "NMAP-CATCHALL - Fast Scan Activity Detected";
+    flags: S;
+    flow: stateless;
+    detection_filter: track by_src, count 12, seconds 3;
+    reference: url, nmap.org;
+    classtype: attempted-recon;
+    sid: 1000044;
+    rev: 1;
+)
+
+# Ignore IPv4 options
+# pass ip 169.254.0.0/16 any -> any any (msg:"Ignore link-local traffic"; sid:900001;)
+# pass ip any any -> 224.0.0.0/4 any (msg:"Ignore multicast"; sid:900002;)
+# pass udp any any -> 0.0.0.0 68 (msg:"Ignore mDNS"; sid:900003;)
+# pass udp any any -> 255.255.255.255 67 (msg:"Ignore SSDP"; sid:900004;)
+ pass icmp any any -> any any (msg:"Ignore ICMP"; sid:900005;)
+
