@@ -1,7 +1,9 @@
 # Detection-and-Prevention-of-DDOS-and-HTTP-Flood-Attacks-Using-Snort-Intrusion-Detection-Techniques
 Source code and configuration files used in the network protection system presented in the published research paper, including Snort 3 rules, automation scripts, systemd service files, and network bridge configuration.
 <img width="1920" height="1046" alt="untitled - GNS3 09_09_2026 11_01_28 م" src="https://github.com/user-attachments/assets/4fd3d8a7-d878-43d9-8058-a5b248bda885" />
-# Detection and Prevention of DDoS and HTTP Flood Attacks Using Snort
+
+🔗 Research Link (DOI):
+[https://doi.org/10.62341/istj-vol39-1-jr27]
 
 ## Project Overview
 
@@ -164,8 +166,3 @@ iptables
 Temporary IP Blocking
 
 ---
-
-Pleased to share our research paper on detecting and preventing DDoS and HTTP Flood attacks using Snort 3 and iptables for automated threat blocking at the Layer 2 Bridge level.
-
-🔗 Research Link (DOI):
-[https://doi.org/10.62341/istj-vol39-1-jr27]
