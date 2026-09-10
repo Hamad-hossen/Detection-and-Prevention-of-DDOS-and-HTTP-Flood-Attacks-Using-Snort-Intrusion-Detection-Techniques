@@ -1,3 +1,6 @@
+# Author: Hamad hossen hamad Al-Warfali
+# Licensed under the MIT License.
+
 [Unit]
 Description=snort fast logs
 After=network.target
