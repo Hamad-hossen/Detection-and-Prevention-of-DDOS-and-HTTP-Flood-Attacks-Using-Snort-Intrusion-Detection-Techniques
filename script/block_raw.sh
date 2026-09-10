@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Copyright (c) 2026 Hamad hossen hamad Al-Warfali
+# Licensed under the MIT License.
+
 # مدة الحظر بالثواني (مثلاً ساعتين = 7200 ثانية)
 BLOCK_TIME=7200
 
