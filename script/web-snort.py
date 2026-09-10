@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+# Copyright (c) 2026 Hamad hossen hamad Al-Warfali
+# Licensed under the MIT License.
+
 """
 🛡️ Attack Monitor System
 Web page to display attack logs from .log files
